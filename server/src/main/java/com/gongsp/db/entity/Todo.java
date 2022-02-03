@@ -5,19 +5,19 @@ import lombok.Setter;
 import org.hibernate.annotations.DynamicInsert;
 
 import javax.persistence.*;
-import java.sql.Date;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
 @Getter
 @Setter
 @DynamicInsert
-@Table(name="tb_auth_email")
-public class AuthEmail {
+@Table(name="tb_todo")
+public class Todo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer authSeq;
-    private String authEmail;
-    private String authCode;
-    private LocalDateTime authDate;
+    private Integer todoSeq;
+    private Integer userSeq;
+    private LocalDate todoDate;
+    private String todoContent;
+    private Boolean todoCompleted;
 }
