@@ -57,12 +57,22 @@ public class TodoServiceImpl implements TodoService{
             return false;
         }
         if (todo.getUserSeq().equals(userSeq)) {
-            todo.setTodoContent(updateInfo.getContent());
-            todo.setTodoCompleted(updateInfo.getCompleted());
-            todoRepository.save(todo);
+            try {
+                todo.setTodoContent(updateInfo.getContent());
+                todo.setTodoCompleted(updateInfo.getCompleted());
+                todoRepository.save(todo);
+            } catch (Exception e) {
+                return false;
+            }
             return true;
         }
         return false;
+    }
+
+    // 완료한 투두 개수 조회
+    @Override
+    public Integer getCompletedTodoCount(Integer userSeq, LocalDate date) {
+        return todoRepository.findAllByUserSeqAndTodoDateAndTodoCompletedIsTrue(userSeq, date).size();
     }
 
 
