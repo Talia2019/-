@@ -3,7 +3,7 @@ import ReactDOM from "react-dom";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import App from "./App";
 import Home from "./pages/Home";
-import Studyrooms from "./pages/Studyrooms";
+import StudyRecruit from "./pages/StudyRecruit";
 import Meetingrooms from "./pages/Meetingrooms";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
@@ -14,6 +14,9 @@ import isLogin from "./utils/isLogin";
 import HomeAchievement from "./pages/Home_achievement";
 import HomeStatistics from "./pages/Home_statistics";
 import HomeTodays from "./pages/Home_todays";
+import VideoRoomComponent from "./components/meetingroom/VideoRoomComponent";
+import StudyRecruitCreate from "./pages/studyRecruitCreate";
+import StudyRecruitDetail from "./pages/studyRecruitDetail";
 
 ReactDOM.render(
   <React.StrictMode>
@@ -27,12 +30,24 @@ ReactDOM.render(
           </Route>
 
           <Route
-            path="studyrooms"
-            element={isLogin() ? <Studyrooms /> : <Login />}
+            path="studyrecruit"
+            element={isLogin() ? <StudyRecruit /> : <Login />}
+          />
+          <Route
+            path="studyrecruit/create"
+            element={isLogin() ? <StudyRecruitCreate /> : <Login />}
+          />
+          <Route
+            path="studyrecruit/:studyseq"
+            element={isLogin() ? <StudyRecruitDetail /> : <Login />}
           />
           <Route
             path="meetingrooms"
             element={isLogin() ? <Meetingrooms /> : <Login />}
+          />
+          <Route
+            path="videoRoomComponent"
+            element={isLogin() ? <VideoRoomComponent /> : <Login />}
           />
           <Route
             path="schedules"

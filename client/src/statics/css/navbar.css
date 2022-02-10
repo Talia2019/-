@@ -11,6 +11,10 @@
   --textColor-dark: #8a8a8a;
   --textColor-darker: #a1a1a1;
   --textColor-darkest: #c2c2c2;
+  --github-01: #e8eaee;
+  --github-02: #d5d6f5;
+  --github-03: #9fa2e3;
+  --board-textColor: #646464;
 }
 
 .ui-dark {
@@ -25,8 +29,12 @@
   --borderColor3: #444444;
   --textColor: #ededed;
   --textColor-dark: #8a8a8a;
-  --textColor-darker: #8a8a8a;
+  --textColor-darker: #6f6f6f;
   --textColor-darkest: #838383;
+  --github-01: rgba(102, 103, 171, 0.2);
+  --github-02: rgba(102, 103, 171, 0.4);
+  --github-03: rgba(102, 103, 171, 0.7);
+  --board-textColor: #ededed;
 }
 
 .hidden {
@@ -34,6 +42,7 @@
 }
 
 .navbar {
+  z-index: 5;
   position: fixed;
   top: 0;
   left: 0;
@@ -76,7 +85,7 @@
 
 .navbar-dropdown {
   font-family: "Pretendard";
-  position: absolute;
+  position: fixed;
   top: 46px;
   right: 20px;
   width: 180px;
@@ -85,9 +94,9 @@
   border: var(--borderColor);
   border-radius: 4px;
   color: #4b4b4b;
-  z-index: 1;
+  z-index: 6;
 }
-.navbar-dropdown .dropdown-menu {
+.navbar-dropdown button {
   cursor: pointer;
   border: none;
   background-color: var(--bgColor);
@@ -96,8 +105,9 @@
   text-align: start;
   padding-left: 12px;
   color: var(--textColor);
+  font-size: 14px;
 }
-.navbar-dropdown .dropdown-menu:hover {
+.navbar-dropdown button:hover {
   background-color: var(--borderColor);
 }
 .navbar-dropdown .navbar-dropdown-list {
