@@ -16,7 +16,6 @@ import isLogin from "./utils/isLogin";
 import HomeAchievement from "./pages/Home_achievement";
 import HomeStatistics from "./pages/Home_statistics";
 import HomeTodays from "./pages/Home_todays";
-import VideoRoomComponent from "./components/meetingroom/VideoRoomComponent";
 import StudyRecruitCreate from "./pages/studyRecruitCreate";
 import StudyRecruitDetail from "./pages/studyRecruitDetail";
 import SettingsProfile from "./pages/SettingsProfile";
@@ -53,10 +52,6 @@ ReactDOM.render(
             <Route
               path="meetingrooms"
               element={isLogin() ? <Meetingrooms /> : <Login />}
-            />
-            <Route
-              path="videoRoomComponent"
-              element={isLogin() ? <VideoRoomComponent /> : <Login />}
             />
             <Route
               path="schedules"

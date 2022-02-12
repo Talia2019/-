@@ -1,6 +1,6 @@
 @import "main.scss";
 
-.modal {
+.modalLarge {
   font-family: $font-family;
   display: none;
   position: fixed;
@@ -16,7 +16,7 @@
   }
   > section {
     width: 80%;
-    max-width: 300px;
+    max-width: 400px;
     margin: 0 auto;
     border-radius: 0.3rem;
     background-color: var(--htmlbgColor);
@@ -24,13 +24,11 @@
     overflow: hidden;
     > header {
       display: flex;
-      justify-content: end;
+      justify-content: flex-end;
       position: relative;
       padding: 15px 15px 0px 15px;
       background-color: var(--htmlbgColor);
-      align-items: center;
-      font-size: 14px;
-      font-weight: 500;
+      font-weight: 700;
     }
     > main {
       padding: 5px 16px 30px 16px;
@@ -82,7 +80,7 @@
     }
   }
 }
-.modal.openModal {
+.modalLarge.openModalLarge {
   display: flex;
   align-items: center;
   animation: modal-bg-show 0.3s;
