@@ -1,4 +1,4 @@
-import { Row, Col, Container } from 'react-bootstrap';
+import { Row, Col } from 'react-bootstrap';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
@@ -7,18 +7,12 @@ export default function Diary() {
   const [catURL, setCatURL] = useState('');
   const [maxim, setMaxim] = useState('');
   const getCatImg = async () => {
-    axios
-      .get(URL)
-      .then((response) =>
-        setCatURL(response.data[0]['url'])
-      );
+    axios.get(URL).then((response) => setCatURL(response.data[0]['url']));
   };
   const getMaxim = async () => {
     axios
       .get('https://api.adviceslip.com/advice')
-      .then((response) =>
-        setMaxim(response.data['slip']['advice'])
-      );
+      .then((response) => setMaxim(response.data['slip']['advice']));
   };
 
   useEffect(() => {
@@ -28,7 +22,15 @@ export default function Diary() {
 
   return (
     <div style={{ margin: '1rem 0rem' }}>
-      <h4 style={{ margin: '1rem 0rem' }}>하루 기록</h4>
+      <h4
+        style={{
+          margin: '1rem 0rem',
+          fontFamily: 'pretendard',
+          fontWeight: 'bold',
+        }}
+      >
+        하루 기록
+      </h4>
       <Row
         style={{
           backgroundColor: '#FCFCFC',
@@ -50,7 +52,7 @@ export default function Diary() {
         </Col>
         <Col
           style={{
-            fontFamily: 'pretandard',
+            fontFamily: 'pretendard',
             margin: 'auto 0rem',
             textAlign: 'center',
           }}
