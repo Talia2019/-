@@ -32,9 +32,7 @@ function Navbar() {
   }, []);
 
   const darkOnOff = () => {
-    if (
-      document.getElementsByTagName('html')[0].classList.contains('ui-dark')
-    ) {
+    if (document.getElementsByTagName('html')[0].classList.contains('ui-dark')) {
       document.getElementsByTagName('html')[0].classList.remove('ui-dark');
       window.localStorage.setItem('bgMode', 'light');
       setIsDark(false);
@@ -50,10 +48,7 @@ function Navbar() {
   // dropdown (외부 클릭시 닫기)
   useEffect(() => {
     const pageClickEvent = (event) => {
-      if (
-        dropdownRef.current !== null &&
-        !dropdownRef.current.contains(event.target)
-      ) {
+      if (dropdownRef.current !== null && !dropdownRef.current.contains(event.target)) {
         setIsActive(!isActive);
       }
     };
@@ -84,6 +79,10 @@ function Navbar() {
     return () => {};
   }, []);
 
+  const onClickReload = () => {
+    navigate('/schedules');
+    window.location.reload();
+  };
   return (
     <div>
       <div className="navbar">
@@ -248,21 +247,11 @@ function Navbar() {
                 </clipPath>
               </defs>
             </svg>
-            {profileImg && (
-              <img
-                className="navbar-profile-img"
-                src={imageURL}
-                alt=""
-                onClick={onClickDropdown}
-              />
-            )}
+            {profileImg && <img className="navbar-profile-img" src={imageURL} alt="" onClick={onClickDropdown} />}
           </div>
         </div>
       </div>
-      <div
-        ref={dropdownRef}
-        className={`navbar-dropdown ${isActive ? 'active' : 'hidden'}`}
-      >
+      <div ref={dropdownRef} className={`navbar-dropdown ${isActive ? 'active' : 'hidden'}`}>
         <div className="navbar-dropdown-list">
           <span className="navbar-dropdown-nickname">{nickname}</span>
           <span className="navbar-dropdown-email">{email}</span>

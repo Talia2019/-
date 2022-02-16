@@ -1,0 +1,121 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css");
+:root {
+  --htmlbgColor: #ffffff;
+  --bgColor: #fcfcfc;
+  --bgColor-light: #eaeaea;
+  --borderColor: #ededed;
+  --borderColor2: #d6d6d6;
+  --borderColor3: #e1e1e1;
+  --textWhite: #eeeeee;
+  --textColor: #252525;
+  --textColor-dark: #8a8a8a;
+  --textColor-darker: #a1a1a1;
+  --textColor-darkest: #c2c2c2;
+  --textColor-todo: #6c757d;
+  --github-01: #e8eaee;
+  --github-02: #d5d6f5;
+  --github-03: #9fa2e3;
+  --board-textColor: #646464;
+  --if-bgColor: #f9f9f9;
+  --if-borderColor: #e5e5e5;
+}
+
+.ui-dark {
+  background-color: var(--htmlbgColor);
+  --htmlbgColor: #292929;
+  --bgColor: #373737;
+  --bgColor-light: #4a4a4a;
+  --bgColor-lighter: #565656;
+  --bgColor-dark: #1b1b1b;
+  --borderColor: #444444;
+  --borderColor2: #444444;
+  --borderColor3: #444444;
+  --textColor: #ededed;
+  --textColor-dark: #8a8a8a;
+  --textColor-darker: #6f6f6f;
+  --textColor-darkest: #838383;
+  --textColor-todo: #cdcdcd;
+  --github-01: rgba(102, 103, 171, 0.2);
+  --github-02: rgba(102, 103, 171, 0.4);
+  --github-03: rgba(102, 103, 171, 0.7);
+  --board-textColor: #ededed;
+  --if-bgColor: #323232;
+  --if-borderColor: #444444;
+}
+
+.hidden {
+  display: none;
+}
+
+.month-nav {
+  color: #6667ab;
+  font-weight: bold;
+  font-size: 40px;
+  line-height: 48px;
+  padding-left: 12px;
+  padding-right: 8px;
+}
+
+.pointer-icon {
+  cursor: pointer;
+  color: var(--textColor-darker);
+  margin: 5px 3px;
+}
+
+.calendar-box {
+  background-color: var(--bgColor);
+  border: 1px solid var(--borderColor);
+  border-radius: 5px;
+  padding: 0 1.2rem;
+  height: 25rem;
+}
+
+.calendar-box-day {
+  padding: 0 5px;
+  cursor: pointer;
+}
+
+.calendar-box-dayname {
+  font-size: 13px;
+  padding: 1rem 8px 0.6rem 8px;
+  color: var(--textColor-dark);
+}
+
+.calendar-box-daycontents {
+  border-top: 2px solid rgba(108, 117, 125, 0.6);
+  height: 19.5rem;
+}
+.calendar-box-daycontents.day-selected {
+  border-top: 2px solid #6667ab;
+  background-color: rgba(102, 103, 171, 0.1);
+}
+
+.calendar-box-date {
+  font-size: 25px;
+  padding-top: 5px;
+  padding-left: 5px;
+  color: var(--textColor);
+}
+
+.calendar-box-studies {
+  border: none;
+  background-color: transparent;
+  padding-left: 6px;
+  margin-bottom: 14px;
+}
+.calendar-box-studies .card-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--textColor);
+}
+.calendar-box-studies .card-subtitle {
+  font-size: 12px;
+  color: var(--textColor-darker);
+}
+.calendar-box-studies .card-subtitle img {
+  margin-bottom: 2px;
+  margin-right: 5px;
+  width: 11px;
+}
+
+/*# sourceMappingURL=calendar.css.map */

@@ -1,12 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
-import TodoItem from './TodoItem';
-import CreateTodo from './TodoCreate';
-import axios from 'axios';
+import React, { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import TodoItem from "./TodoItem";
+import CreateTodo from "./TodoCreate";
+import axios from "axios";
+import "../../../statics/css/Todo/todoList.css";
 
 export default function TodoList() {
   const selectedDay = useSelector((state) => state.schedule.selectedDay);
   const [dailyList, setDailyList] = useState([]);
+  const today = useSelector((state) => state.schedule.today);
   async function getTodos() {
     try {
       const response = await axios.get(
@@ -14,7 +16,7 @@ export default function TodoList() {
           `/todos?date=${JSON.parse(selectedDay)}`,
         {
           headers: {
-            Authorization: `Bearer ` + localStorage.getItem('accessToken'),
+            Authorization: `Bearer ` + localStorage.getItem("accessToken"),
           },
         }
       );
@@ -29,20 +31,15 @@ export default function TodoList() {
   }
   useEffect(() => getTodos(), [selectedDay]);
   useEffect(() => {}, [dailyList]);
+
+  // console.log(selectedDay, today);
   return (
-    <div>
-      <h5 style={{ fontFamily: 'pretendard', fontWeight: 'bold' }}>
-        {parseInt(selectedDay.split('-')[2].slice(0, 2))}일의 할일
-      </h5>
-      <div
-        style={{
-          background: '#fcfcfc',
-          border: '1px solid #ededed',
-          boxSizing: 'border-box',
-          borderRadius: '5px',
-          margin: '1.5rem 0rem',
-        }}
-      >
+    <div className="todo-list">
+      <div className="todo-list__header">
+        {/* {parseInt(selectedDay.split("-")[2].slice(0, 2))}일의 할일 */}
+        오늘의 할 일
+      </div>
+      <div className="todo-list__body">
         {dailyList &&
           dailyList.map((todo) => (
             <TodoItem
@@ -50,9 +47,12 @@ export default function TodoList() {
               todo={todo}
               dailyList={dailyList}
               setDailyList={setDailyList}
+              day={selectedDay}
             />
           ))}
-        <CreateTodo dailyList={dailyList} setDailyList={setDailyList} />
+        {today === selectedDay && (
+          <CreateTodo dailyList={dailyList} setDailyList={setDailyList} />
+        )}
       </div>
     </div>
   );

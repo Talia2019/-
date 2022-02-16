@@ -8169,6 +8169,11 @@ react-calendar-heatmap@^1.8.1:
     memoize-one "^5.0.0"
     prop-types "^15.6.2"
 
+react-circular-progressbar@^2.0.4:
+  version "2.0.4"
+  resolved "https://registry.npmjs.org/react-circular-progressbar/-/react-circular-progressbar-2.0.4.tgz"
+  integrity sha512-OfX0ThSxRYEVGaQSt0DlXfyl5w4DbXHsXetyeivmoQrh9xA9bzVPHNf8aAhOIiwiaxX2WYWpLDB3gcpsDJ9oww==
+
 react-date-range@^1.4.0:
   version "1.4.0"
   resolved "https://registry.npmjs.org/react-date-range/-/react-date-range-1.4.0.tgz"

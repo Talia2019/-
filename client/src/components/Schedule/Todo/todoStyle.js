@@ -1,4 +1,4 @@
-import styled, { css } from 'styled-components';
+import styled, { css } from "styled-components";
 
 export const Remove = styled.div`
   margin-left: 0.3rem;
@@ -30,8 +30,7 @@ export const Text = styled.div`
 export const TodoItemBlock = styled.div`
   display: flex;
   align-items: center;
-  padding-top: 12px;
-  padding-bottom: 12px;
+  padding: 0.3rem;
   &:hover {
     ${Remove} {
       opacity: 1;

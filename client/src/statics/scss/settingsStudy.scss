@@ -48,7 +48,7 @@
       margin: auto;
       border-radius: 100%;
       &.host-crown {
-        top: -34px;
+        top: -54px;
         left: 2px;
         width: 80%;
         height: 80%;
@@ -66,7 +66,7 @@
       width: 48%;
     }
     .settings-study-members__heading {
-      font-size: 15px;
+      font-size: 14px;
       // margin: 0 20px;
       padding: 20px 0 5px 5px;
       border-bottom: 1px solid var(--textColor-darker);
@@ -269,6 +269,7 @@
   }
   .settings-study-details {
     // margin-top: 3rem;
+    font-family: $font-family;
     margin: 1.5rem 10px;
     border: 1px solid var(--borderColor);
     border-radius: 10px;
