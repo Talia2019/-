@@ -4,43 +4,43 @@ import "../statics/css/navbar.css";
 import axios from "axios";
 import isLogin from "../utils/isLogin";
 
-
 function Navbar() {
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
-  const token = localStorage.getItem('accessToken');
+  const token = localStorage.getItem("accessToken");
 
-  const [nickname, setNickname] = useState('');
-  const [email, setEmail] = useState('');
-  const [profileImg, setProfileImg] = useState('');
+  const [nickname, setNickname] = useState("");
+  const [email, setEmail] = useState("");
+  const [profileImg, setProfileImg] = useState("");
   const [isActive, setIsActive] = useState(false);
   const [isDark, setIsDark] = useState(false);
+  const imageURL = "https://i6a301.p.ssafy.io:8080/images/" + profileImg;
 
   // logout
   const onClickLogout = () => {
-    localStorage.removeItem('accessToken');
-    navigate('/');
+    localStorage.removeItem("accessToken");
+    navigate("/");
     window.location.reload();
   };
 
   // darkmode
   useEffect(() => {
-    const bgMode = window.localStorage.getItem('bgMode');
-    if (bgMode === 'dark') {
-      document.getElementsByTagName('html')[0].classList.add('ui-dark');
+    const bgMode = window.localStorage.getItem("bgMode");
+    if (bgMode === "dark") {
+      document.getElementsByTagName("html")[0].classList.add("ui-dark");
     }
   }, []);
 
   const darkOnOff = () => {
     if (
-      document.getElementsByTagName('html')[0].classList.contains('ui-dark')
+      document.getElementsByTagName("html")[0].classList.contains("ui-dark")
     ) {
-      document.getElementsByTagName('html')[0].classList.remove('ui-dark');
-      window.localStorage.setItem('bgMode', 'light');
+      document.getElementsByTagName("html")[0].classList.remove("ui-dark");
+      window.localStorage.setItem("bgMode", "light");
       setIsDark(false);
     } else {
-      document.getElementsByTagName('html')[0].classList.add('ui-dark');
-      window.localStorage.setItem('bgMode', 'dark');
+      document.getElementsByTagName("html")[0].classList.add("ui-dark");
+      window.localStorage.setItem("bgMode", "dark");
       setIsDark(true);
     }
   };
@@ -58,48 +58,57 @@ function Navbar() {
       }
     };
     if (isActive) {
-      window.addEventListener('click', pageClickEvent);
+      window.addEventListener("click", pageClickEvent);
     }
     return () => {
-      window.removeEventListener('click', pageClickEvent);
+      window.removeEventListener("click", pageClickEvent);
     };
   }, [isActive]);
 
   // 유저 정보 불러오기
+  async function getUserInfo() {
+    const response = await axios.get(
+      process.env.REACT_APP_SERVER_URL + "/users",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    const USER = response.data.user;
+    setProfileImg(USER.userImg);
+    setNickname(USER.userNickname);
+    setEmail(USER.userEmail);
+  }
   useEffect(() => {
     if (isLogin()) {
-      axios
-        .get("/users", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
-        .then((res) => {
-          const USER = res.data.user;
-          // console.log(USER);
-          setProfileImg(USER.userImg);
-          setNickname(USER.userNickname);
-          setEmail(USER.userEmail);
-          // console.log(profileImg, nickname, email);
-        });
-      // console.log(res);
+      getUserInfo();
     }
+    return () => {};
   }, []);
 
+  const onClickReload = () => {
+    navigate("/schedules");
+    window.location.reload();
+  };
+
+  const onClickToAlarm = () => {
+    navigate("/settings/alarm");
+  };
   return (
     <div>
       <div className="navbar">
         <div className="navbar-menus">
-          <Link className="menu" to={'/home/tab=todays'}>
+          <Link className="menu" to={"/home/tab=todays"}>
             홈
           </Link>
-          <Link className="menu" to={'/meetingrooms'}>
+          <Link className="menu" to={"/meetingrooms"}>
             자유열람실
           </Link>
-          <Link className="menu" to={'/studyrecruit'}>
+          <Link className="menu" to={"/studyrecruit"}>
             스터디 모집
           </Link>
-          <Link className="menu" to={'/schedules'}>
+          <Link className="menu" to={"/schedules"}>
             일정관리
           </Link>
         </div>
@@ -185,13 +194,6 @@ function Navbar() {
                 </clipPath>
               </defs>
             </svg>
-
-            // <img
-            //   className="dark-light"
-            //   src="icons/_sun.svg"
-            //   alt=""
-            //   onClick={darkOnOff}
-            // ></img>
           )}
           {isDark && (
             <svg
@@ -211,15 +213,9 @@ function Navbar() {
                 strokeLinejoin="round"
               />
             </svg>
-
-            // <img
-            //   className="dark-light"
-            //   src="icons/_moon.svg"
-            //   alt=""
-            //   onClick={darkOnOff}
-            // ></img>
           )}
           <svg
+            onClick={onClickToAlarm}
             className="navbar-profile-alarm"
             width="20"
             height="20"
@@ -235,18 +231,12 @@ function Navbar() {
               strokeLinejoin="round"
             />
           </svg>
-
-          {/* <img
-            className="navbar-profile-alarm"
-            src="icons/notice.svg"
-            alt=""
-          ></img> */}
-          {profileImg === null && (
+          <div className="navbar-profile-img-wrapper">
             <svg
               className="navbar-profile-img"
               onClick={onClickDropdown}
-              width="40"
-              height="40"
+              width="250"
+              height="250"
               viewBox="0 0 40 40"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
@@ -270,44 +260,40 @@ function Navbar() {
                 </clipPath>
               </defs>
             </svg>
-            // <img
-            //   className="navbar-profile-img"
-            //   src="icons/_default-user.svg"
-            //   alt=""
-            //   onClick={onClickDropdown}
-            // ></img>
-          )}
-          {profileImg !== null && (
-            <img
-              className="navbar-profile-img"
-              // src="profileImg"
-              alt=""
-              onClick={onClickDropdown}
-            ></img>
-          )}
+            {profileImg && (
+              <img
+                className="navbar-profile-img"
+                src={imageURL}
+                alt=""
+                onClick={onClickDropdown}
+              />
+            )}
+          </div>
         </div>
       </div>
       <div
         ref={dropdownRef}
-        className={`navbar-dropdown ${isActive ? 'active' : 'hidden'}`}
+        className={`navbar-dropdown ${isActive ? "active" : "hidden"}`}
       >
         <div className="navbar-dropdown-list">
           <span className="navbar-dropdown-nickname">{nickname}</span>
           <span className="navbar-dropdown-email">{email}</span>
         </div>
         <div className="navbar-dropdown-list">
-          <button
+          {/* <button
             // className="dropdown-menu"
             onClick={() => {
               navigate('profile');
+              setIsActive(!isActive);
             }}
           >
             내 프로필
-          </button>
+          </button> */}
           <button
             // className="dropdown-menu"
             onClick={() => {
-              navigate('settings');
+              navigate("settings/profile");
+              setIsActive(!isActive);
             }}
           >
             관리실

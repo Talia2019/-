@@ -1,12 +1,13 @@
-import Calendar from '../components/Schedule/calendar/calendar';
-import '../statics/scss/Schedule.scss';
+import { useEffect } from "react";
+import Calendar from "../components/Schedule/calendar";
+import "../statics/css/Schedule.css";
 
 export default function Schedule() {
+  // useEffect(() => {
+  //   window.location.reload();
+  // }, []);
   return (
-    <main
-      className="justify-content-center"
-      style={{ padding: '1rem' }}
-    >
+    <main className="schedule">
       <Calendar />
     </main>
   );

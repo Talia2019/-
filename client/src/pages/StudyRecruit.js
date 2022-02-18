@@ -1,12 +1,12 @@
 import axios from "axios";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import CategorySelect from "../components/categorySelect";
 import Paginator from "../components/paginator";
 import isLogin from "../utils/isLogin";
-
 import "../statics/css/studyRecruit.css";
+import Modal from "../components/modal";
 
 export default function StudyRecruit() {
   const navigate = useNavigate();
@@ -15,28 +15,33 @@ export default function StudyRecruit() {
   const [postData, setPostData] = useState([]);
   const [searchInput, setSearchInput] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [listening, setListening] = useState(false);
+  const [meventSource, msetEventSource] = useState(undefined);
+  const [studyApply, setStudyApply] = useState(false);
+  const [sseData, setSseData] = useState([]);
+  const [modalStatus, setModalStatus] = useState(false);
+  let eventSource = undefined;
 
-  console.log(
-    "page: ",
-    currentPage,
-    "search: ",
-    searchInput,
-    "category: ",
-    category
-  );
+  const closeModal = () => {
+    setModalStatus(false);
+    setListening(false);
+  };
 
-  const onChangeSearch = useCallback((event) => {
+  const onChangeSearch = (event) => {
     setSearchInput(event.target.value);
-  });
+  };
 
-  const onClickSearch = useCallback(() => {
+  const onClickSearch = () => {
     if (isLogin) {
       axios
-        .get("/studies?page=1&type=" + category + "&key=" + searchInput, {
-          headers: {
-            Authorization: `Bearer ${TOKEN}`,
-          },
-        })
+        .get(
+          process.env.REACT_APP_SERVER_URL + `/studies?page=1&type=${category}&key=${searchInput}`,
+          {
+            headers: {
+              Authorization: `Bearer ${TOKEN}`,
+            },
+          }
+        )
         .then((res) => {
           const data = res.data.data;
           setPostData((prevState) => ({
@@ -45,7 +50,7 @@ export default function StudyRecruit() {
           }));
         });
     }
-  });
+  };
 
   const onKeyEnter = (event) => {
     if (event.key === "Enter") {
@@ -60,12 +65,8 @@ export default function StudyRecruit() {
       }
       axios
         .get(
-          "/studies?page=" +
-            currentPage +
-            "&type=" +
-            category +
-            "&key=" +
-            searchInput,
+          process.env.REACT_APP_SERVER_URL +
+            `/studies?page=${currentPage}&type=${category}&key=${searchInput}`,
           {
             headers: {
               Authorization: `Bearer ${TOKEN}`,
@@ -73,24 +74,48 @@ export default function StudyRecruit() {
           }
         )
         .then((res) => {
-          console.log(res.data);
-          console.log("hi");
           const data = res.data.data;
           setPostData((prevState) => ({
             ...prevState,
             data,
           }));
         });
+      //실시간 알림 sse
+
+      if (!listening) {
+        eventSource = new EventSource(`https://i6a301.p.ssafy.io:8080/sse/sub/1`); //구독
+        msetEventSource(eventSource);
+        eventSource.addEventListener("StudyApply", function (event) {
+          console.log("스터디 신청받음", event.data, event.id, event.name);
+          setStudyApply(true);
+          setSseData(() => event.data.split("_"));
+        });
+        setListening(true);
+      }
     }
   }, [currentPage, category, searchInput]);
 
+  useEffect(() => {
+    if (listening) {
+      setModalStatus(true);
+    }
+  }, [listening]);
+
   return (
     <div className="studyrecruit">
+      {studyApply && (
+        <Modal open={modalStatus} header=" " close={closeModal}>
+          <div className="study-room-kick-msg">
+            {sseData[1] + " 님이 " + sseData[2] + " 스터디에 신청하였습니다."}
+          </div>
+          <button className="study-room-kick-ok" onClick={closeModal}>
+            확인
+          </button>
+        </Modal>
+      )}
       <div className="studyrecruit-heading">
         <span className="studyrecruit-h1">스터디 모집</span>
-        <span className="studyrecruit-h2">
-          모집 게시판에서 원하는 스터디를 찾아보세요
-        </span>
+        <span className="studyrecruit-h2">모집 게시판에서 원하는 스터디를 찾아보세요</span>
       </div>
       <div className="studyrecuit-middle">
         <div className="studyrecruit-search">
@@ -119,10 +144,7 @@ export default function StudyRecruit() {
             </svg>
           </div>
         </div>
-        <button
-          className="studyrecruit-create"
-          onClick={() => navigate('create')}
-        >
+        <button className="studyrecruit-create" onClick={() => navigate("create")}>
           모집글 작성하기
         </button>
       </div>
@@ -130,18 +152,10 @@ export default function StudyRecruit() {
         <table>
           <thead>
             <tr className="studyrecruit-board-th">
-              <th className="studyrecruit-board-head num">
-                #
-              </th>
-              <th className="studyrecruit-board-head title">
-                제목
-              </th>
-              <th className="studyrecruit-board-head host">
-                글쓴이
-              </th>
-              <th className="studyrecruit-board-head date">
-                모집기한
-              </th>
+              <th className="studyrecruit-board-head num">#</th>
+              <th className="studyrecruit-board-head title">제목</th>
+              <th className="studyrecruit-board-head host">글쓴이</th>
+              <th className="studyrecruit-board-head date">모집기한</th>
               <th className="studyrecruit-board-head ppl">
                 <svg
                   width="15"
@@ -160,16 +174,12 @@ export default function StudyRecruit() {
           </thead>
           <tbody>
             {postData.data &&
-              postData.data.map((post) => (
-                <tr key={post.studySeq} className="studyrecruit-board-body-tr">
-                  <td className="studyrecruit-board-body number">
-                    {post.studySeq}
-                  </td>
+              postData.data.map((post, index) => (
+                <tr key={index} className="studyrecruit-board-body-tr">
+                  <td className="studyrecruit-board-body number">{post.studySeq}</td>
                   <td className="studyrecruit-board-body">
                     <div>
-                      <span className="studyrecruit-board-body__category">
-                        {post.categoryName}
-                      </span>
+                      <span className="studyrecruit-board-body__category">{post.categoryName}</span>
                       <span className="studyrecruit-board-body__title">
                         <Link
                           className="studyrecruit-board-body__link"
@@ -177,23 +187,14 @@ export default function StudyRecruit() {
                         >
                           {post.studyTitle}
                         </Link>
-                        {/* {post.studyTitle} */}
                       </span>
                     </div>
 
-                    <div className="studyrecruit-board-body__shortdesc">
-                      {post.studyShortDesc}
-                    </div>
+                    <div className="studyrecruit-board-body__shortdesc">{post.studyShortDesc}</div>
                   </td>
-                  <td className="studyrecruit-board-body host">
-                    {post.hostNickname}
-                  </td>
-                  <td className="studyrecruit-board-body enddate">
-                    {post.studyRecruitEnd}
-                  </td>
-                  <td className="studyrecruit-board-body headcount">
-                    {post.studyHeadcount}/6
-                  </td>
+                  <td className="studyrecruit-board-body host">{post.hostNickname}</td>
+                  <td className="studyrecruit-board-body enddate">{post.studyRecruitEnd}</td>
+                  <td className="studyrecruit-board-body headcount">{post.studyHeadcount}/6</td>
                 </tr>
               ))}
           </tbody>

@@ -14,9 +14,16 @@ export default function StudyRecruitDetail() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [userSeq, setUserSeq] = useState("");
   const [hostSeq, setHostSeq] = useState("");
+  const [profileImg, setProfileImg] = useState("");
 
   // 모달창
   const [modalOpen, setModalOpen] = useState(false);
+
+  //스터디 삭제
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [isDeleteSuccess, setIsDeleteSuccess] = useState(false);
+  const [isRecruitSuccess, setIsRecruitSuccess] = useState(false);
+
   const openModal = () => {
     setModalOpen(true);
   };
@@ -24,6 +31,20 @@ export default function StudyRecruitDetail() {
     setModalOpen(false);
   };
 
+  const openDeleteModal = () => {
+    setDeleteModalOpen(true);
+  };
+  const closeDeleteModal = () => {
+    setDeleteModalOpen(false);
+  };
+
+  function checkAxios() {
+    if (isDeleteSuccess && isRecruitSuccess) {
+      return true;
+    } else {
+      return false;
+    }
+  }
   // yyyy-mm-dd
   function changeDateFormat() {
     if (setTodayDate === null) {
@@ -44,9 +65,10 @@ export default function StudyRecruitDetail() {
 
   // 데이터 받아오기
   useEffect(() => {
+    // test();
     if (isLogin) {
       axios
-        .get("/users", {
+        .get(process.env.REACT_APP_SERVER_URL + "/users", {
           headers: {
             Authorization: `Bearer ${TOKEN}`,
           },
@@ -55,7 +77,7 @@ export default function StudyRecruitDetail() {
           setUserSeq(res.data.user.userSeq);
         });
       axios
-        .get("/studies/" + studyseq, {
+        .get(process.env.REACT_APP_SERVER_URL + "/studies/" + studyseq, {
           headers: {
             Authorization: `Bearer ${TOKEN}`,
           },
@@ -63,13 +85,15 @@ export default function StudyRecruitDetail() {
         .then((res) => {
           const apidata = res.data;
           setHostSeq(apidata.hostSeq);
+          setProfileImg(apidata.hostImg);
           setData((prevState) => ({
             ...prevState,
             apidata,
           }));
         });
     }
-  }, [TOKEN, studyseq]);
+  }, []);
+  const imageURL = "https://i6a301.p.ssafy.io:8080/images/" + profileImg;
 
   // 요일 숫자를 이름으로 바꿔주기
   const numberToDay = (num) => {
@@ -95,13 +119,12 @@ export default function StudyRecruitDetail() {
       return "일";
     }
   };
-  // console.log(data);
 
   // 스터디 신청
   const onApply = useCallback(() => {
     axios
       .post(
-        "/studies/" + studyseq + "/application",
+        process.env.REACT_APP_SERVER_URL + `/studies/${studyseq}/application`,
         {},
         {
           headers: {
@@ -119,6 +142,63 @@ export default function StudyRecruitDetail() {
         openModal();
       });
   }, [TOKEN, studyseq]);
+
+  //스터디 삭제
+  const deleteStudy = useCallback(() => {
+    axios
+      .patch(
+        "/users/studies/" + studyseq + "/end",
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${TOKEN}`,
+          },
+        }
+      )
+      .then((res) => {
+        // console.log(res);
+        if (res.data.statusCode === 200) {
+          setIsDeleteSuccess(true);
+        } else if (res.data.statusCode === 409) {
+          setIsDeleteSuccess(false);
+        }
+      });
+  }, [TOKEN, studyseq]);
+
+  //모집마감
+  const recruitStudy = useCallback(() => {
+    axios
+      .patch(
+        "/users/studies/" + studyseq + "/recruit-end",
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${TOKEN}`,
+          },
+        }
+      )
+      .then((res) => {
+        // console.log(res);
+        if (res.data.statusCode === 200) {
+          setIsRecruitSuccess(true);
+        } else if (res.data.statusCode === 409) {
+          setIsRecruitSuccess(false);
+        }
+      });
+  }, [TOKEN, studyseq]);
+
+  const onClick = () => {
+    deleteStudy();
+    recruitStudy();
+    openDeleteModal();
+  };
+  function handleClick(e) {
+    window.location.href = "/studyrecruit";
+  }
+
+  const sendData = {
+    data: data,
+  };
 
   return (
     <div className="studyrecruit-detail">
@@ -163,50 +243,88 @@ export default function StudyRecruitDetail() {
               <div className="studyrecruit-detail-box-heading__first-host">
                 {/* [TODO]: update, delete 페이지로 링크 필요 */}
                 <Link
-                  to={"/"}
+                  to={"/studyrecruit/modify"}
                   className="studyrecruit-detail-box-heading__first-host-btn update"
+                  state={{}}
                 >
                   수정
                 </Link>
-                <Link
-                  to={"/"}
+                <span
                   className="studyrecruit-detail-box-heading__first-host-btn"
+                  onClick={onClick}
+                  style={{ cursor: "pointer" }}
                 >
                   삭제
-                </Link>
+                </span>
+                <Modal
+                  open={deleteModalOpen}
+                  close={closeDeleteModal}
+                  header=" "
+                >
+                  {checkAxios && (
+                    <div>
+                      <div className="studyapply-modal-msg">삭제되었습니다</div>
+                      <button
+                        className="studyapply-modal-ok"
+                        onClick={handleClick}
+                      >
+                        확인
+                      </button>
+                    </div>
+                  )}
+                  {!checkAxios && (
+                    <div>
+                      <div className="studyapply-modal-msg">
+                        스터디 호스트가 아닙니다
+                      </div>
+                      <button
+                        className="studyapply-modal-ok"
+                        onClick={closeDeleteModal}
+                      >
+                        확인
+                      </button>
+                    </div>
+                  )}
+                </Modal>
               </div>
             )}
           </div>
           <div className="studyrecruit-detail-box-heading__second">
             {data.apidata && (
-              <div className="studyrecruit-detail-box-heading__profileImage">
-                {data.apidata.hostImg === null && (
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 40 40"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <g clipPath="url(#clip0_233_15455)">
+              <div className="studyrecruit-detail-img-wrapper">
+                <svg
+                  className="studyrecruit-detail-img"
+                  width="250"
+                  height="250"
+                  viewBox="0 0 40 40"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <g clipPath="url(#clip0_233_15455)">
+                    <path
+                      d="M0 20C0 8.95431 8.95431 0 20 0C31.0457 0 40 8.95431 40 20C40 31.0457 31.0457 40 20 40C8.95431 40 0 31.0457 0 20Z"
+                      fill="#f4f4f4"
+                    />
+                    <path
+                      d="M40 34.9906V40.0023H0V35.009C2.32658 31.8997 5.34651 29.3762 8.81965 27.6391C12.2928 25.9019 16.1233 24.9991 20.0067 25.0023C28.18 25.0023 35.44 28.9256 40 34.9906ZM26.67 15.0006C26.67 16.7688 25.9676 18.4645 24.7174 19.7147C23.4671 20.9649 21.7714 21.6673 20.0033 21.6673C18.2352 21.6673 16.5395 20.9649 15.2893 19.7147C14.039 18.4645 13.3367 16.7688 13.3367 15.0006C13.3367 13.2325 14.039 11.5368 15.2893 10.2866C16.5395 9.03636 18.2352 8.33398 20.0033 8.33398C21.7714 8.33398 23.4671 9.03636 24.7174 10.2866C25.9676 11.5368 26.67 13.2325 26.67 15.0006Z"
+                      fill="#c0c0c0"
+                    />
+                  </g>
+                  <defs>
+                    <clipPath id="clip0_233_15455">
                       <path
                         d="M0 20C0 8.95431 8.95431 0 20 0C31.0457 0 40 8.95431 40 20C40 31.0457 31.0457 40 20 40C8.95431 40 0 31.0457 0 20Z"
-                        fill="#f4f4f4"
+                        fill="white"
                       />
-                      <path
-                        d="M40 34.9906V40.0023H0V35.009C2.32658 31.8997 5.34651 29.3762 8.81965 27.6391C12.2928 25.9019 16.1233 24.9991 20.0067 25.0023C28.18 25.0023 35.44 28.9256 40 34.9906ZM26.67 15.0006C26.67 16.7688 25.9676 18.4645 24.7174 19.7147C23.4671 20.9649 21.7714 21.6673 20.0033 21.6673C18.2352 21.6673 16.5395 20.9649 15.2893 19.7147C14.039 18.4645 13.3367 16.7688 13.3367 15.0006C13.3367 13.2325 14.039 11.5368 15.2893 10.2866C16.5395 9.03636 18.2352 8.33398 20.0033 8.33398C21.7714 8.33398 23.4671 9.03636 24.7174 10.2866C25.9676 11.5368 26.67 13.2325 26.67 15.0006Z"
-                        fill="#c0c0c0"
-                      />
-                    </g>
-                    <defs>
-                      <clipPath id="clip0_233_15455">
-                        <path
-                          d="M0 20C0 8.95431 8.95431 0 20 0C31.0457 0 40 8.95431 40 20C40 31.0457 31.0457 40 20 40C8.95431 40 0 31.0457 0 20Z"
-                          fill="white"
-                        />
-                      </clipPath>
-                    </defs>
-                  </svg>
+                    </clipPath>
+                  </defs>
+                </svg>
+                {data.apidata.hostImg !== null && (
+                  <img
+                    className="studyrecruit-detail-img"
+                    src={imageURL}
+                    alt=""
+                  />
                 )}
               </div>
             )}
