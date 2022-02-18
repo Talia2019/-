@@ -4,10 +4,11 @@ import com.gongsp.api.request.study.StudyCreatePostReq;
 import com.gongsp.api.request.study.StudyParameter;
 import com.gongsp.api.response.study.StudyRes;
 import com.gongsp.db.entity.Category;
-import com.gongsp.db.entity.Meeting;
+import com.gongsp.db.entity.Study;
 import com.gongsp.db.entity.StudyRoom;
 import com.gongsp.db.entity.User;
 import com.gongsp.db.repository.StudyMemberRepository;
+import com.gongsp.db.repository.StudyRepository;
 import com.gongsp.db.repository.StudyRoomRepository;
 import io.openvidu.java.client.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,9 +25,11 @@ import java.util.concurrent.ConcurrentHashMap;
 public class StudyRoomServiceImpl implements StudyRoomService {
 
     @Autowired
-    StudyRoomRepository studyRoomRepository;
+    private StudyRoomRepository studyRoomRepository;
     @Autowired
-    StudyMemberRepository studyMemberRepository;
+    private StudyMemberRepository studyMemberRepository;
+    @Autowired
+    private StudyRepository studyRepository;
 
     // Collection to pair session names and OpenVidu Session objects
     private Map<String, Session> mapSessions = new ConcurrentHashMap<>();
@@ -107,21 +110,21 @@ public class StudyRoomServiceImpl implements StudyRoomService {
             //검색어 없음 = 전체목록
             if (studyParameter.getKey() == null || studyParameter.getKey().equals("")) {
 //                System.out.println("카테고리X 검색어X");
-                studyList = studyRoomRepository.searchAll(start, studyParameter.getSpp());
+                studyList = studyRoomRepository.searchAll(start, studyParameter.getSpp(), LocalDate.now());
             } else {
                 //검색어 있음 - 필터링(글제목, 글내용)
 //                System.out.println("카테고리X 검색어O");
-                studyList = studyRoomRepository.searchByKey(studyParameter.getKey(), start, studyParameter.getSpp());
+                studyList = studyRoomRepository.searchByKey(studyParameter.getKey(), start, studyParameter.getSpp(), LocalDate.now());
             }
         } else {    //카테고리 선택한경우
             //검색어 없음 = 선택한 카테고리 모두
             if (studyParameter.getKey() == null || studyParameter.getKey().equals("")) {
 //                System.out.println("카테고리O 검색어X");
-                studyList = studyRoomRepository.searchByCategorySeq(studyParameter.getType(), start, studyParameter.getSpp());
+                studyList = studyRoomRepository.searchByCategorySeq(studyParameter.getType(), start, studyParameter.getSpp(), LocalDate.now());
             } else {
                 //검색어 있음 - 필터링(글제목, 글내용)
 //                System.out.println("카테고리O 검색어O");
-                studyList = studyRoomRepository.searchByKeyAndCategory(studyParameter.getKey(), studyParameter.getType(), start, studyParameter.getSpp());
+                studyList = studyRoomRepository.searchByKeyAndCategory(studyParameter.getKey(), studyParameter.getType(), start, studyParameter.getSpp(), LocalDate.now());
             }
         }
 
@@ -134,6 +137,7 @@ public class StudyRoomServiceImpl implements StudyRoomService {
             studyRes.setStudyShortDesc(study.getStudyShortDesc());
             studyRes.setStudyHeadcount(getStudyMemberNum(study.getStudySeq()));
             studyRes.setStudyRecruitEnd(study.getStudyRecruitEnd());
+            studyRes.setIsStudyRecruiting(study.getIsStudyRecruiting());
             studyResList.add(studyRes);
         }
         return studyResList;
@@ -151,18 +155,18 @@ public class StudyRoomServiceImpl implements StudyRoomService {
             //검색어 없음 = 전체목록
             if (studyParameter.getKey() == null || studyParameter.getKey().equals("")) {
 //                System.out.println("카테고리X 검색어X");
-                return (int) studyRoomRepository.count();
+                return studyRoomRepository.countAllWithoutCount(LocalDate.now());
             } else {
                 //검색어 있음 - 필터링(글제목, 글내용)
-                return studyRoomRepository.countByLike(studyParameter.getKey());
+                return studyRoomRepository.countByLike(studyParameter.getKey(), LocalDate.now());
             }
         } else {    //카테고리 선택한경우
             //검색어 없음 = 선택한 카테고리 모두
             if (studyParameter.getKey() == null || studyParameter.getKey().equals("")) {
-                return studyRoomRepository.countByCategory(studyParameter.getType());
+                return studyRoomRepository.countByCategory(studyParameter.getType(), LocalDate.now());
             } else {
                 //검색어 있음 - 필터링(글제목, 글내용)
-                return studyRoomRepository.countByLikeAndCategory(studyParameter.getType(), studyParameter.getKey());
+                return studyRoomRepository.countByLikeAndCategory(studyParameter.getType(), studyParameter.getKey(), LocalDate.now());
             }
         }
     }
@@ -193,6 +197,7 @@ public class StudyRoomServiceImpl implements StudyRoomService {
         studyRoom.setStudyDateEnd(null);
         studyRoom.setStudyRecruitStart(LocalDate.now());
         studyRoom.setStudyRecruitEnd(studyCreatePostReq.getStudyRecruitEnd());
+        studyRoom.setIsStudyRecruiting(true);
         return studyRoomRepository.save(studyRoom);
     }
 
@@ -241,5 +246,19 @@ public class StudyRoomServiceImpl implements StudyRoomService {
             System.out.println("Problems in the app server: the SESSION does not exist");
             return "Error";
         }
+    }
+
+    @Override
+    public void hideStudyRecruit(LocalDate date) {
+        List<StudyRoom> endedRecruitList = studyRoomRepository.findStudyRoomsByStudyDateEnd(date);
+        for (StudyRoom study : endedRecruitList) {
+            study.setIsStudyRecruiting(false);
+            studyRoomRepository.save(study);
+        }
+    }
+
+    @Override
+    public List<Study> getRecruitEndedStudyList(LocalDate date) {
+        return studyRepository.findAllByRecruitEndDate(date);
     }
 }

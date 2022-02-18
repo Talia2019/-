@@ -2,12 +2,13 @@ package com.gongsp.api.service;
 
 import com.gongsp.api.request.meeting.MeetingCreatePostReq;
 import com.gongsp.api.request.meeting.MeetingParameter;
-import com.gongsp.api.request.study.StudyParameter;
 import com.gongsp.api.response.meeting.MeetingDetailGetRes;
 import com.gongsp.api.response.meeting.MeetingRes;
+import com.gongsp.db.entity.Bookmark;
 import com.gongsp.db.entity.Category;
 import com.gongsp.db.entity.Meeting;
 import com.gongsp.db.entity.MeetingDetail;
+import com.gongsp.db.repository.BookmarkRepository;
 import com.gongsp.db.repository.MeetingDetailRepository;
 import com.gongsp.db.repository.MeetingRepository;
 import io.openvidu.java.client.*;
@@ -27,6 +28,8 @@ public class MeetingServiceImpl implements MeetingService {
     private MeetingRepository meetingRepository;
     @Autowired
     private MeetingDetailRepository meetingDetailRepository;
+    @Autowired
+    private BookmarkRepository bookmarkRepository;
 
     // Collection to pair session names and OpenVidu Session objects
     // ConcurrentHashMap : Multi-Thread 환경에서 사용할 수 있도록 나온 클래스
@@ -36,7 +39,7 @@ public class MeetingServiceImpl implements MeetingService {
     private Map<String, Map<String, OpenViduRole>> mapSessionNamesTokens = new ConcurrentHashMap<>();
 
     @Override
-    public String getToken(OpenVidu openVidu, Integer userSeq, Meeting meeting) {
+    public String getToken(OpenVidu openVidu, Integer userSeq, Meeting meeting, boolean isHost) {
 //        System.out.println("Getting a token from OpenVidu Server | {Meetingroom name}=" + meeting.getMeetingTitle());
 
         // sessionName = meetingUrl
@@ -44,13 +47,15 @@ public class MeetingServiceImpl implements MeetingService {
 //        System.out.println(sessionName);
         // 근데 아예 Subscriber로 설정하면 화면송출이 안되는듯?? 일단 예제따라서
 //        System.out.println(userSeq + " " + meeting.getHostSeq() + userSeq.equals(meeting.getHostSeq()));
-
-        OpenViduRole role = OpenViduRole.PUBLISHER;
-
+        OpenViduRole role  = OpenViduRole.MODERATOR;
+//        if (isHost)
+//            role = OpenViduRole.PUBLISHER;
+//        else
+//            role = OpenViduRole.SUBSCRIBER;
 //        OpenViduRole role = userSeq.equals(meeting.getHostSeq()) ? OpenViduRole.PUBLISHER : OpenViduRole.SUBSCRIBER;
 //        System.out.println("역할:" + role);
         String serverData = "{\"serverData\": \"" + userSeq + "\"}";
-        System.out.println(serverData);
+//        System.out.println(serverData);
         // Build connectionProperties object with the serverData and the role
         ConnectionProperties connectionProperties = new ConnectionProperties.Builder().type(ConnectionType.WEBRTC).data(serverData).role(role).build();
 
@@ -60,21 +65,22 @@ public class MeetingServiceImpl implements MeetingService {
             try {
                 // Generate a new Connection with the recently created connectionProperties
                 String token = this.mapSessions.get(sessionName).createConnection(connectionProperties).getToken();
-                System.out.println("토큰: " + token);
+//                System.out.println("토큰: " + token);
                 // Update our collection storing the new token
                 this.mapSessionNamesTokens.get(sessionName).put(token, role);
                 return token;
             } catch (OpenViduJavaClientException e1) {
                 // If internal error generate an error message and return it to client
-                System.out.println("에러1");
+//                System.out.println("에러1");
                 System.out.println(e1.getStackTrace());
-                System.out.println("cause: " + e1.getCause());
-                System.out.println("error: " + e1.getMessage());
-                System.out.println("exception: " + e1.getClass());
+//                System.out.println("cause: " + e1.getCause());
+//                System.out.println("error: " + e1.getMessage());
+//                System.out.println("exception: " + e1.getClass());
                 return "InternalError";
             } catch (OpenViduHttpException e2) {
                 if (404 == e2.getStatus()) {
-                    System.out.println("에러2");
+                    System.out.println(e2.getStackTrace());
+//                    System.out.println("에러2");
                     // Invalid sessionId (user left unexpectedly). Session object is not valid
                     // anymore. Clean collections and continue as new session
                     this.mapSessions.remove(sessionName);
@@ -148,20 +154,20 @@ public class MeetingServiceImpl implements MeetingService {
 //                if (optionalMeetings.isPresent())
 //                    meetingList = optionalMeetings.get();
 //                System.out.println("카테고리X 검색어O");
-                meetingList = meetingRepository.searchByKey(meetingParameter.getKey(), start,  meetingParameter.getSpp(), userSeq);
+                meetingList = meetingRepository.searchByKey(meetingParameter.getKey(), start, meetingParameter.getSpp(), userSeq);
             }
         } else {    //카테고리 선택한경우
             //검색어 없음 = 선택한 카테고리 모두
             if (meetingParameter.getKey() == null || meetingParameter.getKey().equals("")) {
 //                System.out.println("카테고리O 검색어X");
-                meetingList = meetingRepository.searchByCategorySeq(meetingParameter.getType(), start,  meetingParameter.getSpp(), userSeq);
+                meetingList = meetingRepository.searchByCategorySeq(meetingParameter.getType(), start, meetingParameter.getSpp(), userSeq);
             } else {
                 //검색어 있음 - 필터링(글제목, 글내용)
 //                Optional<List<Meeting>> optionalMeetings = meetingRepository.findByMeetingTitleContainingOrMeetingDescContaining(meetingParameter.getKey(), meetingParameter.getKey(), pageRequest);
 //                if (optionalMeetings.isPresent())
 //                    meetingList = optionalMeetings.get();
 //                System.out.println("카테고리O 검색어O");
-                meetingList = meetingRepository.searchByKeyAndCategory(meetingParameter.getKey(), meetingParameter.getType(), start,  meetingParameter.getSpp(), userSeq);
+                meetingList = meetingRepository.searchByKeyAndCategory(meetingParameter.getKey(), meetingParameter.getType(), start, meetingParameter.getSpp(), userSeq);
             }
         }
 
@@ -173,6 +179,9 @@ public class MeetingServiceImpl implements MeetingService {
             meetingRes.setMeetingHeadcount(meeting.getMeetingHeadcount());
             meetingRes.setMeetingTitle(meeting.getMeetingTitle());
             meetingRes.setCategoryName(meeting.getCategory().getCategoryName());
+            meetingRes.setInBookmark(false);
+            if (bookmarkRepository.existsByMeetingSeqAndUserSeq(meeting.getMeetingSeq(), userSeq) != 0)
+                meetingRes.setInBookmark(true);
             meetingResList.add(meetingRes);
         }
         return meetingResList;
@@ -206,20 +215,22 @@ public class MeetingServiceImpl implements MeetingService {
         Meeting meeting = new Meeting();
         meeting.setHostSeq(userSeq);
         meeting.setCategory(new Category(meetingCreatePostReq.getCategorySeq()));
-        if(meetingCreatePostReq.getMeetingTitle().length()>50)
+        if (meetingCreatePostReq.getMeetingTitle().length() > 50)
             meeting.setMeetingTitle(meetingCreatePostReq.getMeetingTitle().substring(50));
         else
             meeting.setMeetingTitle(meetingCreatePostReq.getMeetingTitle());
+        meeting.setCategorySeq(meetingCreatePostReq.getCategorySeq());
         meeting.setMeetingDesc(meetingCreatePostReq.getMeetingDesc());
         meeting.setMeetingUrl(meetingCreatePostReq.getMeetingTitle() + userSeq);
         meeting.setMeetingCamType(meetingCreatePostReq.getMeetingCamType());
         meeting.setMeetingMicType(meetingCreatePostReq.getMeetingMicType());
-        meeting.setMeetingImg(uuidFilename);
+        if(uuidFilename!=null)
+            meeting.setMeetingImg(uuidFilename);
         return meetingRepository.save(meeting);
     }
 
     @Override
-    public MeetingDetailGetRes getMeetingDetail(Integer meetingSeq) {
+    public MeetingDetailGetRes getMeetingDetail(Integer meetingSeq, int userSeq) {
         MeetingDetailGetRes meetingDetailGetRes = new MeetingDetailGetRes();
         Optional<MeetingDetail> opMeetingDetail = meetingDetailRepository.findMeetingByMeetingSeq(meetingSeq);
         if (!opMeetingDetail.isPresent())
@@ -234,7 +245,7 @@ public class MeetingServiceImpl implements MeetingService {
         meetingDetailGetRes.setMeetingHeadcount(meetingDetail.getMeetingHeadcount());
         meetingDetailGetRes.setMeetingUrl(meetingDetail.getMeetingUrl());
         String type = "";
-        switch(meetingDetail.getMeetingCamType()){
+        switch (meetingDetail.getMeetingCamType()) {
             case 1:
                 type = "얼굴";
                 break;
@@ -247,7 +258,7 @@ public class MeetingServiceImpl implements MeetingService {
         }
         meetingDetailGetRes.setMeetingCamType(type);
         type = "";
-        switch(meetingDetail.getMeetingMicType()){
+        switch (meetingDetail.getMeetingMicType()) {
             case 1:
                 type = "음소거";
                 break;
@@ -257,6 +268,8 @@ public class MeetingServiceImpl implements MeetingService {
         }
         meetingDetailGetRes.setMeetingMicType(type);
         meetingDetailGetRes.setIsMeetingOnair(meetingDetail.getIsMeetingOnair());
+        if (bookmarkRepository.existsByMeetingSeqAndUserSeq(meetingSeq, userSeq) != 0)
+            meetingDetailGetRes.setInBookmark(true);
         return meetingDetailGetRes;
     }
 
@@ -268,7 +281,7 @@ public class MeetingServiceImpl implements MeetingService {
     @Override
     public Integer getHostSeq(Integer meetingSeq) {
         Optional<Meeting> opMeeting = meetingRepository.findMeetingByMeetingSeq(meetingSeq);
-        if(!opMeeting.isPresent())
+        if (!opMeeting.isPresent())
             return 0;
         return opMeeting.get().getHostSeq();
     }
@@ -276,7 +289,7 @@ public class MeetingServiceImpl implements MeetingService {
     @Override
     public String getMeetingUrl(Integer meetingSeq) {
         Optional<Meeting> opMeeting = meetingRepository.findMeetingByMeetingSeq(meetingSeq);
-        if(!opMeeting.isPresent())
+        if (!opMeeting.isPresent())
             return null;
         return opMeeting.get().getMeetingUrl();
     }
@@ -286,9 +299,9 @@ public class MeetingServiceImpl implements MeetingService {
         // If the session exists
         if (this.mapSessions.get(sessionName) != null && this.mapSessionNamesTokens.get(sessionName) != null) {
             // If the token exists
-            if (this.mapSessionNamesTokens.get(sessionName).remove(token) != null) {
+            if (token!=null && this.mapSessionNamesTokens.get(sessionName).remove(token) != null) {
                 // User left the session
-                System.out.println("세션 종료여부: " + this.mapSessionNamesTokens.get(sessionName).isEmpty());
+//                System.out.println("세션 종료여부: " + this.mapSessionNamesTokens.get(sessionName).isEmpty());
                 if (this.mapSessionNamesTokens.get(sessionName).isEmpty()) {
                     // Last user left: session must be removed
                     this.mapSessions.remove(sessionName);

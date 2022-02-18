@@ -20,7 +20,7 @@ public class StudyDayServiceImpl implements StudyDayService {
 
     @Override
     public Optional<StudyDay[]> getStudyDay(Integer studySeq) {
-        return studyDayRepository.findAllByStudySeq(studySeq);
+        return studyDayRepository.findAllByStudySeqOrderByDayNumber(studySeq);
     }
 
     @Override
@@ -40,20 +40,31 @@ public class StudyDayServiceImpl implements StudyDayService {
     public boolean isValidTime(Integer studySeq, LocalDate curDate, LocalTime curTime) {
         Integer today = curDate.getDayOfWeek().getValue();
         Optional<StudyDay[]> opStudyDays = getStudyDay(studySeq);
-        if(!opStudyDays.isPresent())
+        if (!opStudyDays.isPresent())
             return false;
-        boolean res = false;
         StudyDay[] studyDays = opStudyDays.get();
-        for (StudyDay studyDay: studyDays) {
-            if(studyDay.getDayNumber().equals(today)){
+        for (StudyDay studyDay : studyDays) {
+            if (studyDay.getDayNumber().equals(today)) {
                 LocalTime startTime = studyDay.getStartTime();
-                if(startTime.getHour() >= curTime.getHour()){
-                    if(startTime.getMinute() >= curTime.getMinute())
-                        res = true;
-                }
+                LocalTime endTime = studyDay.getEndTime();
+                if (curTime.isAfter(startTime) && curTime.isBefore(endTime))
+                    return true;
                 break;
             }
         }
-        return res;
+        return false;
     }
+
+    @Override
+    public LocalTime getStartTime(Integer studySeq, Integer today) {
+        return studyDayRepository.findStartTime(studySeq, today);
+//        return null;
+    }
+
+    @Override
+    public LocalTime getEndTime(Integer studySeq, Integer today) {
+        return studyDayRepository.findEndTime(studySeq, today);
+//        return null;
+    }
+
 }

@@ -9,15 +9,16 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service("studyHistoryService")
 public class StudyHistoryServiceImpl implements StudyHistoryService {
 
     @Autowired
-    StudyHistoryRepository studyHistoryRepository;
+    private StudyHistoryRepository studyHistoryRepository;
     @Autowired
-    StudyDayRepository studyDayRepository;
+    private StudyDayRepository studyDayRepository;
 
     @Override
     public boolean existsMemberToday(Integer userSeq, Integer studySeq, LocalDate now) {
@@ -38,22 +39,22 @@ public class StudyHistoryServiceImpl implements StudyHistoryService {
         studyHistory.setUserSeq(userSeq);
         studyHistory.setStudySeq(studySeq);
         studyHistory.setHistoryDate(LocalDate.now());
-        Optional<StudyDay[]> opStudyDays = studyDayRepository.findAllByStudySeq(studySeq);
+        Optional<StudyDay[]> opStudyDays = studyDayRepository.findAllByStudySeqOrderByDayNumber(studySeq);
         studyHistory.setHistoryLate(false);
         if (opStudyDays.isPresent()){
             Integer today = LocalDate.now().getDayOfWeek().getValue();
             StudyDay[] studyDays = opStudyDays.get();
             for (StudyDay studyday: studyDays ) {
                 if(studyday.getDayNumber().equals(today)){
-                    LocalTime startTime = studyday.getStartTime();
+                    LocalTime startTime = studyday.getStartTime().plusMinutes(10);
+                    System.out.println(startTime);
                     LocalTime curTime = LocalTime.now();
-                    if(startTime.getHour() >= curTime.getHour()){
-                        if(startTime.getMinute() >= curTime.getMinute())
-                            studyHistory.setHistoryLate(false);
-                        else
-                            studyHistory.setHistoryLate(true);
-                    }
-                    studyHistory.setHistoryLate(true);
+//                    System.out.println(curTime);
+//                    System.out.println(startTime);
+                    if(curTime.isAfter(startTime))
+                        studyHistory.setHistoryLate(true);
+                    else
+                        studyHistory.setHistoryLate(false);
                     break;
                 }
             }
@@ -81,11 +82,28 @@ public class StudyHistoryServiceImpl implements StudyHistoryService {
     @Override
     public boolean isMemberLate(Integer userSeq, Integer studySeq, LocalDate curDate) {
         StudyHistory studyHistory = studyHistoryRepository.findStudyHistoryByUserSeqAndStudySeqAndHistoryDate(userSeq, studySeq, curDate).get();
+//        if(!studyHistory.isPresent())
         return studyHistory.getHistoryLate();
+    }
+
+    @Override
+    public Integer isMemberAttend(Integer userSeq, Integer studySeq, LocalDate curDate){
+        Optional<StudyHistory> studyHistory = studyHistoryRepository.findStudyHistoryByUserSeqAndStudySeqAndHistoryDate(userSeq, studySeq, curDate);
+        if(!studyHistory.isPresent())
+            return 0;
+        if(studyHistory.get().getHistoryLate())
+            return 1;
+        else
+            return 2;
     }
 
     @Override
     public boolean existsAnyoneToday(Integer studySeq, LocalDate curDate) {
         return studyHistoryRepository.existsStudyHistoryByStudySeqAndHistoryDate(studySeq, curDate);
+    }
+
+    @Override
+    public List<Object []> getHistoryList() {
+        return studyHistoryRepository.historyList();
     }
 }

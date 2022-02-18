@@ -1,12 +1,10 @@
 package com.gongsp.api.controller;
 
+import com.gongsp.api.request.study.StudyApplyPostReq;
 import com.gongsp.api.request.study.StudyCreatePostReq;
 import com.gongsp.api.request.study.StudyExitPatchReq;
 import com.gongsp.api.request.study.StudyParameter;
-import com.gongsp.api.response.study.StudyBanPostRes;
-import com.gongsp.api.response.study.StudyDetailGetRes;
-import com.gongsp.api.response.study.StudyEnterPostRes;
-import com.gongsp.api.response.study.StudyListGetRes;
+import com.gongsp.api.response.study.*;
 import com.gongsp.api.service.*;
 import com.gongsp.common.auth.GongUserDetails;
 import com.gongsp.common.model.response.BaseResponseBody;
@@ -19,7 +17,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.util.Arrays;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -50,6 +50,9 @@ public class StudyController {
     UserService userService;
     @Autowired
     SseService sseService;
+    @Autowired
+    private NoticeService noticeService;
+
 
     public StudyController(@Value("${openvidu.secret}") String secret, @Value("${openvidu.url}") String openviduUrl) {
         this.SECRET = secret;
@@ -70,7 +73,7 @@ public class StudyController {
 
         // 권한없는 사용자가 입실시도 할 경우
         if (!studyMemberService.existsMember(userSeq, studySeq))
-            return ResponseEntity.ok(StudyEnterPostRes.of(406, "Fail : User don't have permission"));
+            return ResponseEntity.ok(StudyEnterPostRes.of(405, "Fail : User don't have permission"));
 
         LocalDate curDate = LocalDate.now();
 
@@ -79,14 +82,19 @@ public class StudyController {
             return ResponseEntity.ok(StudyEnterPostRes.of(406, "Fail : User was ejected"));
 
         // 스터디 시작 전/ 종료 후
-//        if (!studyDayService.isValidTime(studySeq, curDate, LocalTime.now()))
-//            return ResponseEntity.ok(StudyEnterPostRes.of(407, "Fail : Study has not started yet or already ended"));
+        if (!studyDayService.isValidTime(studySeq, curDate, LocalTime.now()))
+            return ResponseEntity.ok(StudyEnterPostRes.of(407, "Fail : Study has not started yet or already ended"));
 
         // 스터디 정원은 생각 안하겠습니당 신청받을때 무조건 6명 이하로 받는다고 생각해서...
 
         StudyRoom studyRoom = opStudyRoom.get();
         // token 얻기 (session 생성 후 connection 생성)
         String token = studyRoomService.getToken(openVidu, userSeq, studyRoom);
+
+        if (token.equals("InternalError"))
+            return ResponseEntity.ok(StudyEnterPostRes.of(409, "Fail : OpenViduJavaClientException", null));
+        if (token.equals("GenError"))
+            return ResponseEntity.ok(StudyEnterPostRes.of(409, "Fail : Generate meeting room", null));
 
         studyMemberService.updateMemberOnair(userSeq, studySeq, true);
 
@@ -106,11 +114,21 @@ public class StudyController {
             isLate = studyHistoryService.isMemberLate(userSeq, studySeq, curDate);
         }
 
-        if (token.equals("InternalError"))
-            return ResponseEntity.ok(StudyEnterPostRes.of(409, "Fail : OpenViduJavaClientException", null));
-        if (token.equals("GenError"))
-            return ResponseEntity.ok(StudyEnterPostRes.of(409, "Fail : Generate meeting room", null));
-        return ResponseEntity.ok(StudyEnterPostRes.of(200, "Success : Enter study room", token, studyRoom, studyRoom.getHost().getUserSeq().equals(userSeq), isLate));
+        List<StudyMemberRes> memberResList = new ArrayList<>();
+        List<Integer> memberSeqList = studyMemberService.getStudyMemberSeqList(studySeq);
+        for (Integer memberSeq: memberSeqList) {
+//            String userNickname = userService.getUserNickname(memberSeq);
+//            Integer userIsLate=studyHistoryService.isMemberAttend(memberSeq, studySeq, curDate);
+            memberResList.add(new StudyMemberRes(userService.getUserNickname(memberSeq), studyHistoryService.isMemberAttend(memberSeq, studySeq, curDate), studyRoom.getHost().getUserSeq().equals(memberSeq)));
+        }
+
+        // 업적 "일찍 일어나는 새(15번)" 등록
+        if (LocalTime.now().isBefore(LocalTime.of(07, 00, 00))) {
+            noticeService.sendAchieveNotice(userSeq, 15, "일찍 일어나는 새");
+        }
+
+        int today = curDate.getDayOfWeek().getValue();
+        return ResponseEntity.ok(StudyEnterPostRes.of(200, "Success : Enter study room", token, studyRoom, studyRoom.getHost().getUserSeq().equals(userSeq), isLate,((GongUserDetails) authentication.getDetails()).getUsername(), userSeq, memberResList, studyDayService.getStartTime(studySeq, today), studyDayService.getEndTime(studySeq, today)));
     }
 
     //스터디룸 퇴실
@@ -137,12 +155,22 @@ public class StudyController {
         logTimeService.updateStudyLogTime(userSeq, studyExitPatchReq.getLogStudy(), studyExitPatchReq.getLogStartTime());
         userService.updateUserLogTime(userSeq, studyExitPatchReq.getLogStudy());
 
+        // 업적 "올빼미(8번)" 등록
+        if (logTimeService.getEndTime(userSeq, LocalDate.now()).isAfter(LocalTime.of(23, 59, 00))) {
+            noticeService.sendAchieveNotice(userSeq, 8, "올빼미");
+        }
+
         return ResponseEntity.ok(BaseResponseBody.of(200, "Success : Remove user"));
     }
 
     //일시방출 누적횟수 확인
-    @GetMapping("{study-seq}/ban/{user-seq}")
-    public ResponseEntity<? extends BaseResponseBody> getBanCnt(@PathVariable("study-seq") Integer studySeq, @PathVariable("user-seq") Integer userSeq, Authentication authentication) {
+    @GetMapping("{study-seq}/ban/{user-nickname}")
+    public ResponseEntity<? extends BaseResponseBody> getBanCnt(@PathVariable("study-seq") Integer studySeq, @PathVariable("user-nickname") String userNickname, Authentication authentication) {
+        Optional<User> opUser = userService.getUserByUserNickname(userNickname);
+        if(!opUser.isPresent())
+            return ResponseEntity.ok(BaseResponseBody.of(407, "Fail : User nickname is not valid"));
+        Integer userSeq = opUser.get().getUserSeq();
+
         Optional<StudyRoomMember> opStudyMember = studyMemberService.getStudyMember(userSeq, studySeq);
         if (!opStudyMember.isPresent())
             return ResponseEntity.ok(StudyBanPostRes.of(409, "Fail : Not valid studySeq or userSeq", null));
@@ -154,8 +182,13 @@ public class StudyController {
     }
 
     //스터디원 일시방출하기
-    @PatchMapping("{study-seq}/ban/{user-seq}")
-    public ResponseEntity<? extends BaseResponseBody> banUserFromStudy(@PathVariable("study-seq") Integer studySeq, @PathVariable("user-seq") Integer userSeq, Authentication authentication) {
+    @PatchMapping("{study-seq}/ban/{user-nickname}")
+    public ResponseEntity<? extends BaseResponseBody> banUserFromStudy(@PathVariable("study-seq") Integer studySeq, @PathVariable("user-nickname") String userNickname, Authentication authentication) {
+        Optional<User> opUser = userService.getUserByUserNickname(userNickname);
+        if(!opUser.isPresent())
+            return ResponseEntity.ok(BaseResponseBody.of(407, "Fail : User nickname is not valid"));
+        Integer userSeq = opUser.get().getUserSeq();
+
         if(authentication == null)
             return ResponseEntity.ok(BaseResponseBody.of(403, "Access denied"));
         Optional<StudyRoomMember> opStudyMember = studyMemberService.getStudyMember(userSeq, studySeq);
@@ -217,14 +250,16 @@ public class StudyController {
 
     // 스터디 신청
     @PostMapping("{study-seq}/application")
-    public ResponseEntity<? extends BaseResponseBody> applyStudy(@PathVariable("study-seq") Integer studySeq, Authentication authentication) {
+    public ResponseEntity<? extends BaseResponseBody> applyStudy(@PathVariable("study-seq") Integer studySeq, @RequestBody StudyApplyPostReq studyApplyPostReq, Authentication authentication) {
         Integer userSeq = Integer.parseInt((String) authentication.getPrincipal());
         Optional<StudyRoom> opStudyRoom = studyRoomService.getStudyRoom(studySeq);
         if (!opStudyRoom.isPresent())
             return ResponseEntity.ok(StudyEnterPostRes.of(404, "Fail : Not valid studySeq"));
         if (studyApplyService.existsStudyById(new StudyApplyId(userSeq, studySeq)))
             return ResponseEntity.ok(BaseResponseBody.of(409, "Fail : Already applied"));
-        studyApplyService.createApplicant(new StudyApplyId(userSeq, studySeq));
+        if(studyMemberService.existsMember(userSeq, studySeq))
+            return ResponseEntity.ok(BaseResponseBody.of(408, "Fail : Already member"));
+        studyApplyService.createApplicant(new StudyApplyId(userSeq, studySeq), studyApplyPostReq.getApplyMessage());
         StudyRoom studyRoom = opStudyRoom.get();
         GongUserDetails gongUserDetails = (GongUserDetails) authentication.getDetails();
         sseService.sendStudyApplyNotice(studyRoom.getHost().getUserSeq(), studyRoom.getStudySeq(), ((GongUserDetails) authentication.getDetails()).getUsername(), studyRoom.getStudyTitle());

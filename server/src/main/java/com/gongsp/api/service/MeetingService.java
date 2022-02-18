@@ -12,7 +12,7 @@ import java.util.Optional;
 
 public interface MeetingService {
     //미팅룸 입실(session 연결)
-    String getToken(OpenVidu openVidu, Integer userSeq, Meeting meeting);
+    String getToken(OpenVidu openVidu, Integer userSeq, Meeting meeting, boolean isHost);
     //미팅룸 퇴실(session 연결종료)
     String removeUser(String sessionName, String token, Integer meetingSeq);
 
@@ -20,7 +20,7 @@ public interface MeetingService {
     void updateMeeting(Integer meetingSeq, int flag);
     List<MeetingRes> getMeetingList(MeetingParameter meetingParameter, Integer userSeq);
     Meeting createMeeting(MeetingCreatePostReq meetingCreatePostReq, Integer userSeq, String uuidFileName);
-    MeetingDetailGetRes getMeetingDetail(Integer meetingSeq);
+    MeetingDetailGetRes getMeetingDetail(Integer meetingSeq, int userSeq);
     boolean isUserOwnMeeting(Integer userSeq);
     Integer getHostSeq(Integer meetingSeq);
     String getMeetingUrl(Integer meetingSeq);

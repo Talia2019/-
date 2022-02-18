@@ -46,7 +46,8 @@ public class DiaryServiceImpl implements DiaryService{
             diary.setUserSeq(userSeq);
             diary.setDiaryDate(LocalDate.parse(request.getDateInfo().getDate(), DateTimeFormatter.ISO_DATE));
             diary.setDiaryContent(request.getContentInfo().getContent());
-            diary.setDiaryImg(uuidFilename);
+            if (uuidFilename != null)
+                diary.setDiaryImg(uuidFilename);
             diaryRepository.save(diary);
         } catch (Exception e) {
             return false;
@@ -57,17 +58,19 @@ public class DiaryServiceImpl implements DiaryService{
     @Override
     public Boolean updateDiary(Integer userSeq, Integer diarySeq, DiaryContentInfo contentInfo, String uuidFilename) {
         Diary diary = diaryRepository.getDiaryByDiarySeq(diarySeq).orElse(null);
-        String originalDiaryImg = diary.getDiaryImg();
         if (diary == null || !userSeq.equals(diary.getUserSeq())) {
             // 해당 하루기록 존재하지 않거나, 사용자의 하루기록이 아닌 경우(권한 없음)
             return false;
         }
+        String originalDiaryImg = diary.getDiaryImg();
         try {
             diary.setDiaryContent(contentInfo.getContent());
-            diary.setDiaryImg(uuidFilename);
+            if (uuidFilename != null)
+                diary.setDiaryImg(uuidFilename);
             diaryRepository.save(diary);
             // 기존 이미지 삭제
-            storageService.delete(originalDiaryImg);
+            if (originalDiaryImg != null)
+                storageService.delete(originalDiaryImg);
         } catch (Exception e) {
             return false;
         }
