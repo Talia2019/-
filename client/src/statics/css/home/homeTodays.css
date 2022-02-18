@@ -1,4 +1,48 @@
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css");
+:root {
+  --htmlbgColor: #ffffff;
+  --bgColor: #fcfcfc;
+  --bgColor-light: #eaeaea;
+  --borderColor: #ededed;
+  --borderColor2: #d6d6d6;
+  --borderColor3: #e1e1e1;
+  --textWhite: #eeeeee;
+  --textColor: #252525;
+  --textColor-dark: #8a8a8a;
+  --textColor-darker: #a1a1a1;
+  --textColor-darkest: #c2c2c2;
+  --textColor-todo: #6c757d;
+  --github-01: #e8eaee;
+  --github-02: #d5d6f5;
+  --github-03: #9fa2e3;
+  --board-textColor: #646464;
+  --if-bgColor: #f9f9f9;
+  --if-borderColor: #e5e5e5;
+}
+
+.ui-dark {
+  background-color: var(--htmlbgColor);
+  --htmlbgColor: #292929;
+  --bgColor: #373737;
+  --bgColor-light: #4a4a4a;
+  --bgColor-lighter: #565656;
+  --bgColor-dark: #1b1b1b;
+  --borderColor: #444444;
+  --borderColor2: #444444;
+  --borderColor3: #444444;
+  --textColor: #ededed;
+  --textColor-dark: #8a8a8a;
+  --textColor-darker: #6f6f6f;
+  --textColor-darkest: #838383;
+  --textColor-todo: #cdcdcd;
+  --github-01: rgba(102, 103, 171, 0.2);
+  --github-02: rgba(102, 103, 171, 0.4);
+  --github-03: rgba(102, 103, 171, 0.7);
+  --board-textColor: #ededed;
+  --if-bgColor: #323232;
+  --if-borderColor: #444444;
+}
+
 .hidden {
   display: none;
 }
@@ -14,11 +58,12 @@
   margin-left: 5px;
 }
 .home-todays .home-todays-top {
-  width: 100%;
   display: grid;
   grid-template-columns: 4fr 5fr;
-  gap: 15px;
   margin-bottom: 8vh;
+}
+.home-todays .home-todays-top .home-todays-todos {
+  padding-right: 20px;
 }
 .home-todays .home-todays-top .home-todays-todos button {
   border: none;
@@ -42,8 +87,19 @@
 .home-todays .home-todays-studyrooms {
   margin-bottom: 8vh;
 }
-.home-todays .home-todays-meetingrooms {
-  width: 100%;
+.home-todays .home-todays-meetingrooms .home-todays-meetingrooms-row {
+  display: flex;
+}
+.home-todays .home-todays-meetingrooms .home-todays-meetingrooms-row .home-todays-meetingrooms-box {
+  background: var(--bgColor);
+  border: 1px solid var(--borderColor);
+  box-sizing: border-box;
+  border-radius: 10px;
+  width: 50%;
+  height: 243px;
+  margin-bottom: 1%;
+  margin-top: 9px;
+  margin-right: 15px;
 }
 
 /*# sourceMappingURL=homeTodays.css.map */
